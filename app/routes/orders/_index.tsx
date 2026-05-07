@@ -1,5 +1,6 @@
 import type { Route } from "./+types/_index";
-import { performGetBuyerOrders, performOrderAction } from "./orders.server";
+import { performGetBuyerOrders } from "./getBuyerOrders.server";
+import { performOrderAction } from "./orderAction.server";
 import { CartManagerView } from "~/components/orders/CartManagerView";
 import { useActionData } from "react-router";
 
