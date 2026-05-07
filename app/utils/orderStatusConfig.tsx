@@ -4,7 +4,7 @@ export const getStatusConfig = (status: string) => {
   switch (status) {
     case "paid":
       return {
-        label: "Payée - En cours de livraison",
+        label: "Payée - En cours de traitement",
         class: "badge-success",
         icon: <CheckCircle2 className="w-5 h-5 text-success" />,
       };

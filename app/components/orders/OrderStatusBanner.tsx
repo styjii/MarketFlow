@@ -15,7 +15,7 @@ export const OrderStatusBanner = ({
         <Package className="w-5 h-5" />
         <div>
           <p className="text-sm font-semibold">Commande payée</p>
-          <p className="text-xs">Statut : en cours de livraison</p>
+          <p className="text-xs">Statut : en cours de traitement</p>
           {shippingAddress && (
             <p className="text-xs">Livraison : {shippingAddress}</p>
           )}
