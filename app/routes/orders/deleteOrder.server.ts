@@ -29,11 +29,7 @@ export async function performDeleteOrder(request: Request, orderId: string) {
   if (order.buyer_id !== user.id)
     throw new Response("Non autorisé", { status: 403, headers });
 
-  if (
-    order.status === "paid" ||
-    order.status === "shipped" ||
-    order.status === "delivered"
-  ) {
+  if (order.status === "paid" || order.status === "shipped") {
     await restoreStock(supabase, order.order_items);
 
     const { error: deletePaymentError } = await supabase
