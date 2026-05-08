@@ -100,7 +100,7 @@ const LogisticsSection = ({ stats }: { stats: DashboardStats }) => (
         <div className="stat">
           <div className="stat-figure text-success"><CheckCircle className="w-6 h-6" /></div>
           <div className="stat-title text-sm">Payées</div>
-          <div className="stat-value text-success text-2xl">{stats.completedCount}</div>
+          <div className="stat-value text-success text-2xl">{stats.paidCount}</div>
           <div className="stat-desc">À expédier</div>
         </div>
       </div>

@@ -8,7 +8,7 @@ export interface DashboardStats {
   totalSales: number;
   totalRevenue: number;
   pendingCount: number;
-  completedCount: number;
+  paidCount: number;
   shippedCount: number;
   deliveredCount: number;
   totalOrders: number;
@@ -100,9 +100,9 @@ export async function performGetDashboardData(request: Request) {
     totalSales: uniqueOrders
       .filter((o) => ["paid", "shipped", "delivered"].includes(o.status))
       .reduce((acc, o) => acc + toAmount(o.total_amount), 0),
-    totalRevenue: uniqueOrders.reduce((acc, o) => acc + toAmount(o.total_amount), 0),
+    totalRevenue: uniqueOrders.filter((o) => o.status !== "cancelled").reduce((acc, o) => acc + toAmount(o.total_amount), 0),
     pendingCount:   uniqueOrders.filter((o) => o.status === "pending").length,
-    completedCount: uniqueOrders.filter((o) => o.status === "paid").length,
+    paidCount: uniqueOrders.filter((o) => o.status === "paid").length,
     shippedCount:   uniqueOrders.filter((o) => o.status === "shipped").length,
     deliveredCount: uniqueOrders.filter((o) => o.status === "delivered").length,
     totalOrders:    uniqueOrders.length,

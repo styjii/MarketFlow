@@ -196,6 +196,16 @@ CREATE POLICY "Users can delete their own payments" ON public.payments FOR DELET
     WHERE o.id = payments.order_id AND o.buyer_id = auth.uid()
   )
 );
+CREATE POLICY "Sellers can view payments of their orders"
+ON public.payments FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.order_items oi
+    JOIN public.products p ON p.id = oi.product_id
+    WHERE oi.order_id = payments.order_id
+      AND p.seller_id = auth.uid()
+  )
+);
 
 -- IMAGE PRODUITS (PRODUCT_IMAGES)
 ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
