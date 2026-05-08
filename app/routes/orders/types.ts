@@ -1,7 +1,9 @@
+import type { PaymentProvider, PaymentDetails } from "~/types/payment";
+
 export type PaymentPayload = {
-  payment_method: string;
-  card_number: string;
-  expiry_date: string;
-  cardholder_name: string;
+  provider: PaymentProvider;
+  payment_details: PaymentDetails;
+  external_id?: string; // transaction ID from provider
   shipping_address?: string;
 };
+

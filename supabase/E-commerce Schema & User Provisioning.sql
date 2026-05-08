@@ -90,10 +90,9 @@ CREATE TABLE public.payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
   amount DECIMAL(12,2) NOT NULL,
-  payment_method TEXT NOT NULL,
-  card_number TEXT NOT NULL, -- masked or last 4
-  expiry_date TEXT NOT NULL,
-  cardholder_name TEXT NOT NULL,
+  provider TEXT NOT NULL, -- 'stripe', 'paypal', etc.
+  payment_details JSONB NOT NULL, -- {card_brand, last_4, email, etc.}
+  external_id TEXT, -- transaction ID from provider
   status TEXT DEFAULT 'completed',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

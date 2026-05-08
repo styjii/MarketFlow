@@ -73,10 +73,9 @@ export async function performPayOrder(
   const { error: paymentError } = await supabase.from("payments").insert({
     order_id: orderId,
     amount: order.total_amount,
-    payment_method: paymentData.payment_method,
-    card_number: paymentData.card_number.replace(/\s/g, "").slice(-4),
-    expiry_date: paymentData.expiry_date,
-    cardholder_name: paymentData.cardholder_name,
+    provider: paymentData.provider,
+    payment_details: paymentData.payment_details,
+    external_id: paymentData.external_id,
   });
 
   if (paymentError)
