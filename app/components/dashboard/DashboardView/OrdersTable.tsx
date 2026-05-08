@@ -4,7 +4,7 @@ import {
   formatPaymentInfo,
   getStatusBadgeClass,
   getStatusLabel,
-} from "~/utils/formatters";
+} from "./utils/formatters";
 
 interface OrdersTableProps {
   orders: Order[];

@@ -1,5 +1,5 @@
 import { Form, Link, href } from "react-router";
-import { LayoutDashboard, X, UserCircle, FileText, Tag, User, LogOut } from "lucide-react";
+import { LayoutDashboard, X, FileText, Tag, User, LogOut } from "lucide-react";
 import { SidebarItem } from "./SidebarItem";
 
 export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {

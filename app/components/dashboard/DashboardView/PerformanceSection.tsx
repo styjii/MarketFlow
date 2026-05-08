@@ -1,6 +1,6 @@
 import { TrendingUp, ShoppingCart, Zap, BarChart3 } from "lucide-react";
 import type { DashboardStats } from "~/routes/dashboard/dashboard.server";
-import { formatCurrency } from "~/utils/formatters";
+import { formatCurrency } from "./utils/formatters";
 
 interface PerformanceSectionProps {
   stats: DashboardStats;
