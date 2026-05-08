@@ -38,7 +38,6 @@ export function HomeView({ products, userId }: HomeViewProps) {
     });
   }, [products, search, category]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
