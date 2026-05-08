@@ -1,7 +1,15 @@
 import { createClient } from "~/lib/supabase.server";
 import { data } from "react-router";
 import { decrementStock } from "./stock.server";
-import type { PaymentPayload } from "./types";
+import type { Profile } from "~/types/profile";
+import type { PaymentDetails, PaymentProvider } from "~/types/payment";
+
+export type PaymentPayload = {
+  provider: PaymentProvider;
+  payment_details: PaymentDetails;
+  external_id?: string; // transaction ID from provider
+  shipping_address?: string;
+};
 
 export async function performPayOrder(
   request: Request,
@@ -58,10 +66,9 @@ export async function performPayOrder(
     .from("profiles")
     .select("shipping_address")
     .eq("id", user.id)
-    .maybeSingle();
+    .maybeSingle<Pick<Profile, "shipping_address">>();
 
-  const shippingAddress =
-    paymentData.shipping_address || profile?.shipping_address;
+  const shippingAddress = paymentData.shipping_address || profile?.shipping_address;
   if (!shippingAddress)
     throw new Response("Adresse de livraison requise", {
       status: 400,

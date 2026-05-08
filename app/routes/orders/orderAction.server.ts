@@ -1,8 +1,7 @@
 import { createClient } from "~/lib/supabase.server";
 import { data } from "react-router";
-import type { PaymentPayload } from "./types";
 import { performDeleteOrder } from "./deleteOrder.server";
-import { performPayOrder } from "./payOrder.server";
+import { performPayOrder, type PaymentPayload } from "./payOrder.server";
 import { performGetBuyerOrders } from "./getBuyerOrders.server";
 
 export async function performOrderAction(request: Request) {
