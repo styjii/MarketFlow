@@ -154,6 +154,15 @@ WITH CHECK (true);
 
 -- COMMANDES (ORDERS)
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Sellers can view orders containing their products"
+ON public.orders FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.order_items oi
+    JOIN public.products p ON p.id = oi.product_id
+    WHERE oi.order_id = orders.id AND p.seller_id = auth.uid()
+  )
+);
 CREATE POLICY "Users can view their own orders" ON public.orders FOR SELECT USING (
   auth.uid() = buyer_id
 );
