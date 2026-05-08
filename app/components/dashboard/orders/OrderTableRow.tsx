@@ -1,6 +1,6 @@
 import { useFetcher } from "react-router";
 import type { Order } from "~/types/order";
-import { formatDate } from "~/utils/formatDate";
+import { formatDate } from "./utils/formatDate";
 import { OrderRowActions } from "./OrderRowActions";
 
 interface OrderTableRowProps {

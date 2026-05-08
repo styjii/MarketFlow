@@ -1,4 +1,3 @@
-// components/Profil/EditProfileHeader.tsx
 import React from "react";
 import { Link, href } from "react-router";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";

@@ -1,6 +1,6 @@
-import { Trash2, CreditCard, Clock, CheckCircle2, Package, XCircle } from "lucide-react";
+import { Trash2, CreditCard } from "lucide-react";
 import type { Order } from "~/types/order";
-import { getStatusConfig } from "./utils/orderStatusConfig";
+import { getStatusConfig } from "../dashboard/orders/utils/orderStatusConfig";
 import { OrderItemsList } from "./OrderItemsList";
 import { OrderStatusBanner } from "./OrderStatusBanner";
 

@@ -1,5 +1,5 @@
 import { useOutletContext } from "react-router";
-import { ProfilView } from "~/components/profile/ProfilView";
+import { ProfilView } from "~/components/dashboard/profile/ProfilView";
 import type { Profile } from "~/types/profile";
 import type { Route } from "./+types/_index";
 

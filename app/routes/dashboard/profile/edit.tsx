@@ -1,6 +1,6 @@
 import { data, href, redirect } from "react-router";
 import { createClient } from "~/lib/supabase.server";
-import { ProfilEditView } from "~/components/profile/ProfilEditView";
+import { ProfilEditView } from "~/components/dashboard/profile/ProfilEditView";
 import type { Profile } from "~/types/profile";
 import type { Route } from "./+types/edit";
 import { performUpdateProfile } from "./edit.server";
