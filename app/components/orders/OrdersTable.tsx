@@ -9,6 +9,25 @@ interface OrdersTableProps {
   fetcher: ReturnType<typeof useFetcher>;
 }
 
+const formatPaymentInfo = (order: Order): string => {
+  if (!order.payments || order.payments.length === 0) {
+    return "Non payé";
+  }
+
+  const payment = order.payments[0]; // Prendre le premier paiement
+  const provider = payment.provider.charAt(0).toUpperCase() + payment.provider.slice(1);
+
+  if (payment.provider === "card" && payment.payment_details.card_brand) {
+    return `${provider} ${payment.payment_details.card_brand} ****${payment.payment_details.last_4 || "****"}`;
+  }
+
+  if (payment.provider === "paypal" && payment.payment_details.email) {
+    return `${provider} ${payment.payment_details.email}`;
+  }
+
+  return provider;
+};
+
 export const OrdersTable = ({ orders, fetcher }: OrdersTableProps) => {
   return (
     <>
@@ -50,6 +69,12 @@ export const OrdersTable = ({ orders, fetcher }: OrdersTableProps) => {
                 <span className="font-bold text-primary">{order.total_amount} €</span>
               </div>
 
+              {/* Informations de paiement */}
+              <div className="text-sm">
+                <span className="font-medium">Paiement: </span>
+                <span className="opacity-75">{formatPaymentInfo(order)}</span>
+              </div>
+
               {/* Actions */}
               <div className="pt-1 border-t border-base-300 flex justify-end">
                 <OrderRowActions order={order} fetcher={fetcher} />
@@ -66,6 +91,7 @@ export const OrdersTable = ({ orders, fetcher }: OrdersTableProps) => {
               <th>Commande</th>
               <th>Client</th>
               <th>Montant</th>
+              <th>Paiement</th>
               <th>Livrée</th>
               <th>En cours</th>
               <th className="text-right">Action</th>

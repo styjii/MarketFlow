@@ -50,7 +50,7 @@ export async function performGetDashboardData(request: Request) {
     orderIds.length > 0
       ? await supabase
           .from("orders")
-          .select("id, total_amount, status, created_at, shipping_address, buyer_id (id, full_name, email)")
+          .select("id, total_amount, status, created_at, shipping_address, buyer_id (id, full_name, email), payments (id, provider, payment_details, external_id, status, created_at)")
           .in("id", orderIds)
       : { data: [] as any[] };
 
@@ -71,6 +71,7 @@ export async function performGetDashboardData(request: Request) {
           }
         : { full_name: "", email: "" },
       order_items: [],
+      payments: order.payments || [],
     } as Order);
   });
 

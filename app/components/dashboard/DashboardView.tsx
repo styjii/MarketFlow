@@ -172,6 +172,25 @@ const OrdersTable = ({ orders }: { orders: Order[] }) => {
     return <div className="text-center py-10 opacity-40">Aucune commande</div>;
   }
 
+  const formatPaymentInfo = (order: Order): string => {
+    if (!order.payments || order.payments.length === 0) {
+      return "Non payé";
+    }
+
+    const payment = order.payments[0];
+    const provider = payment.provider.charAt(0).toUpperCase() + payment.provider.slice(1);
+
+    if (payment.provider === "card" && payment.payment_details.card_brand) {
+      return `${provider} ${payment.payment_details.card_brand} ****${payment.payment_details.last_4 || "****"}`;
+    }
+
+    if (payment.provider === "paypal" && payment.payment_details.email) {
+      return `${provider} ${payment.payment_details.email}`;
+    }
+
+    return provider;
+  };
+
   return (
     <>
       <div className="flex flex-col gap-3 sm:hidden">
@@ -186,6 +205,9 @@ const OrdersTable = ({ orders }: { orders: Order[] }) => {
               </span>
             </div>
             <p className="font-semibold">{order.buyer?.full_name || "Inconnu"}</p>
+            <div className="text-sm opacity-75">
+              Paiement: {formatPaymentInfo(order)}
+            </div>
             <div className="flex items-center justify-between">
               <span className="text-sm opacity-60">
                 {order.order_items?.length ?? 0} article(s)
@@ -204,6 +226,7 @@ const OrdersTable = ({ orders }: { orders: Order[] }) => {
             <tr>
               <th>Date</th>
               <th>Acheteur</th>
+              <th>Paiement</th>
               <th>Articles</th>
               <th>Montant</th>
               <th>Statut</th>
@@ -216,6 +239,9 @@ const OrdersTable = ({ orders }: { orders: Order[] }) => {
                   {new Date(order.created_at).toLocaleDateString("fr-FR")}
                 </td>
                 <td>{order.buyer?.full_name || "Inconnu"}</td>
+                <td className="text-sm">
+                  {formatPaymentInfo(order)}
+                </td>
                 <td>{order.order_items?.length ?? 0} article(s)</td>
                 <td className="font-semibold">{formatCurrency(order.total_amount)}</td>
                 <td>
