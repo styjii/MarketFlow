@@ -111,7 +111,8 @@ export const Navbar: React.FC<NavbarProps> = React.memo(function Navbar({ user, 
             <NavItem to={href("/")} label="Accueil" />
             {!!user && <NavItem to={href("/orders")} label="Mes commandes" />}
             {!!user && <NavItem to={href("/notifications")} label="Notifications" />}
-            {isAuthorized && <NavItem to={href("/dashboard/profile")} label="Dashboard" />}
+            {!!user && <NavItem to={href("/profile")} label="Profile" />}
+            {isAuthorized && <NavItem to={href("/dashboard")} label="Dashboard" />}
           </ul>
           <AuthButtons user={user} />
         </div>
@@ -138,7 +139,8 @@ export const Navbar: React.FC<NavbarProps> = React.memo(function Navbar({ user, 
             <NavItem to={href("/")} label="Accueil" onClick={close} />
             {!!user && <NavItem to={href("/orders")} label="Mes commandes" onClick={close} />}
             {!!user && <NavItem to={href("/notifications")} label="Notifications" onClick={close} />}
-            {isAuthorized && <NavItem to={href("/dashboard/profile")} label="Dashboard" onClick={close} />}
+            {!!user && <NavItem to={href("/profile")} label="Profile" onClick={close} />}
+            {isAuthorized && <NavItem to={href("/dashboard")} label="Dashboard" onClick={close} />}
           </ul>
           <AuthButtons user={user} onClose={close} />
         </div>
