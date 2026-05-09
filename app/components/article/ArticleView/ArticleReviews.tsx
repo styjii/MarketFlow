@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Star, Pencil, Trash2, Send } from "lucide-react";
 import { fadeInUp } from "./utils/animations";
 import { useArticleReviews } from "./hooks/useArticleReviews";
+import { Avatar } from "~/components/shared/Avatar";
 import type { Review } from "~/types/review";
 import { getReviewProfile } from "~/types/review";
 
@@ -136,7 +137,7 @@ export const ArticleReviews: React.FC<ArticleReviewsProps> = React.memo(
           </div>
         )}
 
-        {/* Liste */}
+        {/* Liste des avis */}
         <div className="space-y-3">
           {reviews.length === 0 && (
             <p className="text-sm opacity-30 italic text-center py-6">
@@ -152,43 +153,39 @@ export const ArticleReviews: React.FC<ArticleReviewsProps> = React.memo(
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {profile?.avatar_url ? (
-                      <img
-                        src={profile.avatar_url}
-                        className="w-7 h-7 rounded-full object-cover"
-                        alt=""
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-base-300 flex items-center justify-center text-[11px] font-black opacity-50">
-                        {(profile?.username ?? "?")[0].toUpperCase()}
-                      </div>
-                    )}
+                    <Avatar
+                      avatarPath={profile?.avatar_url}
+                      username={profile?.username}
+                      size={28}
+                    />
                     <span className="text-xs font-bold opacity-70">
                       {profile?.username ?? "Utilisateur"}
                     </span>
                   </div>
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        size={11}
-                        className={
-                          s <= review.rating
-                            ? "text-warning fill-warning"
-                            : "text-base-content/15"
-                        }
-                      />
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          size={11}
+                          className={
+                            s <= review.rating
+                              ? "text-warning fill-warning"
+                              : "text-base-content/15"
+                          }
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] opacity-25">
+                      {new Date(review.created_at).toLocaleDateString("fr-FR")}
+                    </span>
                   </div>
                 </div>
                 {review.comment && (
-                  <p className="text-sm text-base-content/60 leading-relaxed">
+                  <p className="text-sm text-base-content/60 leading-relaxed pl-9">
                     {review.comment}
                   </p>
                 )}
-                <p className="text-[10px] opacity-25">
-                  {new Date(review.created_at).toLocaleDateString("fr-FR")}
-                </p>
               </div>
             );
           })}
