@@ -1,6 +1,6 @@
-import { useCallback } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import { InputField } from "~/components/shared/FormFields";
+import React from "react";
+import { Plus } from "lucide-react";
+import { AttributeRow } from "./AttributeRow";
 import type { AttributeItem } from "./hooks/useAttributes";
 
 interface AttributesSectionProps {
@@ -11,7 +11,10 @@ interface AttributesSectionProps {
 }
 
 export const AttributesSection: React.FC<AttributesSectionProps> = ({
-  attributes, onAdd, onUpdate, onRemove,
+  attributes,
+  onAdd,
+  onUpdate,
+  onRemove,
 }) => (
   <div className="card bg-base-200 border border-white/5 shadow-xl">
     <div className="card-body gap-4">
@@ -26,40 +29,13 @@ export const AttributesSection: React.FC<AttributesSectionProps> = ({
 
       <div className="space-y-3">
         {attributes.map((attribute, index) => (
-          <div key={index} className="grid grid-cols-12 gap-2 items-end">
-            <div className="col-span-5">
-              <InputField
-                label="Clé"
-                name="attribute_key"
-                value={attribute.key}
-                onChange={useCallback(
-                  (e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, "key", e.target.value),
-                  [index, onUpdate]
-                )}
-                placeholder="Ex: taille"
-              />
-            </div>
-            <div className="col-span-6">
-              <InputField
-                label="Valeur"
-                name="attribute_value"
-                value={attribute.value}
-                onChange={useCallback(
-                  (e: React.ChangeEvent<HTMLInputElement>) => onUpdate(index, "value", e.target.value),
-                  [index, onUpdate]
-                )}
-                placeholder="Ex: M"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => onRemove(index)}
-              className="btn btn-square btn-sm btn-error"
-              aria-label="Supprimer attribut"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
+          <AttributeRow
+            key={index}
+            attribute={attribute}
+            index={index}
+            onUpdate={onUpdate}
+            onRemove={onRemove}
+          />
         ))}
       </div>
     </div>
