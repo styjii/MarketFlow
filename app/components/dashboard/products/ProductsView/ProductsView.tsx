@@ -6,19 +6,24 @@ import { InventoryStatCard } from "./Inventory/InventoryStatCard";
 import { SearchBar } from "./SearchBar";
 import { StatusFilterDropdown } from "./StatusFilterDropdown";
 import { ProductsTable } from "./ProductsTable";
+import { Pagination } from "./Pagination";
 import { useProductFilters } from "./hooks/useProductFilters";
 import { useDeleteProduct } from "./hooks/useDeleteProduct";
+import { usePagination } from "./hooks/usePagination";
 import type { Product } from "~/types/products";
 
-interface MyProductsViewProps {
+interface ProductsViewProps {
   products: Product[];
 }
 
-export const ProductsView: React.FC<MyProductsViewProps> = React.memo(function MyProductsView({
+export const ProductsView: React.FC<ProductsViewProps> = React.memo(function MyProductsView({
   products,
 }) {
   const { searchQuery, statusFilter, filteredProducts, stats, setSearchQuery, setStatusFilter } =
     useProductFilters(products);
+
+  const { page, pageSize, totalPages, paginatedItems, setPage, goNext, goPrev, setPageSize } =
+    usePagination({ items: filteredProducts, pageSize: 10 });
 
   const { targetProduct, isSubmitting, requestDelete, confirmDelete, cancelDelete } =
     useDeleteProduct();
@@ -43,9 +48,20 @@ export const ProductsView: React.FC<MyProductsViewProps> = React.memo(function M
       </div>
 
       <ProductsTable
-        products={filteredProducts}
+        products={paginatedItems}
         searchQuery={searchQuery}
         onDeleteRequest={requestDelete}
+      />
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalItems={filteredProducts.length}
+        onPageChange={setPage}
+        onNext={goNext}
+        onPrev={goPrev}
+        onPageSizeChange={setPageSize}
       />
 
       <DeleteProductModal
