@@ -4,6 +4,7 @@ import { ProductNavBar } from "./ProductNavBar";
 import { ProductImageGallery } from "./ProductImageGallery";
 import { ProductMeta } from "./ProductMeta";
 import { ProductDescription } from "./ProductDescription";
+import { ProductAttributes } from "./ProductAttributes";
 import { ProductStatusFooter } from "./ProductStatusFooter";
 import { useProductImages } from "./hooks/useProductImages";
 import type { Product } from "~/types/products";
@@ -47,6 +48,7 @@ export const ProductView: React.FC<ProductViewProps> = React.memo(function Produ
               categories={product.categories}
             />
             <ProductDescription description={product.description} />
+            <ProductAttributes attributes={product.attributes} />
           </div>
 
           <ProductStatusFooter isPublished={product.is_published} />

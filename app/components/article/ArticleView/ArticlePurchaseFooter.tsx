@@ -1,12 +1,12 @@
 import React from "react";
 import { ShoppingCart } from "lucide-react";
 
-interface ProductPurchaseFooterProps {
+interface ArticlePurchaseFooterProps {
   outOfStock: boolean;
   onPurchase: () => void;
 }
 
-export const ProductPurchaseFooter: React.FC<ProductPurchaseFooterProps> = ({ 
+export const ArticlePurchaseFooter: React.FC<ArticlePurchaseFooterProps> = ({ 
   outOfStock, 
   onPurchase 
 }) => {

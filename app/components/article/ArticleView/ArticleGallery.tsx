@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, ChevronLeft, ChevronRight } from "lucide-react";
 
-interface ProductGalleryProps {
+interface ArticleGalleryProps {
   images: string[];
   title: string;
 }
 
-export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, title }) => {
+export const ArticleGallery: React.FC<ArticleGalleryProps> = ({ images, title }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const next = () => setCurrentIndex((p) => (p + 1) % images.length);
