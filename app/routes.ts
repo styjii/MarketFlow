@@ -45,6 +45,8 @@ export default [
       route("login", authDir("login.tsx")),
       route("register", authDir("register.tsx")),
       route("logout", authDir("logout.tsx")),
+      route("forgot-password", authDir("forgot-password.tsx")),
+      route("reset-password", authDir("reset-password.tsx")),
     ]),
   ]),
 

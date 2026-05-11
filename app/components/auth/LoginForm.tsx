@@ -32,6 +32,7 @@ export function LoginForm({ actionData: _actionData }: { actionData?: ActionData
         icon={User} 
         type="text" 
         autoComplete="username"
+        autoCapitalize="none" autoCorrect="off" spellCheck={false}
         placeholder="votre@email.com ou pseudo" 
         value={formData.identifier} 
         onChange={handleChange} 

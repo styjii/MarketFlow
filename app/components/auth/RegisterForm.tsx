@@ -110,6 +110,7 @@ export function RegisterForm({ actionData: _actionData }: { actionData?: ActionD
             name="username" label="Nom d'utilisateur" icon={AtSign} type="text"
             placeholder="Ex: Doe"
             value={formData.username} onChange={handleChange} required
+            autoCapitalize="none" autoCorrect="off" spellCheck={false}
           />
           {fieldErrors.username && <span className="text-error text-xs ml-1">{fieldErrors.username}</span>}
         </div>
