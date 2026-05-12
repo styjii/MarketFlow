@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Form, useNavigation, useActionData } from "react-router";
+import { Form, useNavigation, useActionData, Link, href } from "react-router";
 import { User, Lock, LogIn } from "lucide-react";
 import { AuthInput, AuthButton } from "./AuthUI";
 import { StatusMessage } from "~/components/shared/StatusMessage";
@@ -55,9 +55,9 @@ export function LoginForm({ actionData: _actionData }: { actionData?: ActionData
           disabled={isSubmitting}
         />
         <div className="flex justify-end px-1">
-          <button type="button" className="text-[10px] uppercase tracking-widest font-bold text-primary hover:text-primary-focus transition-colors">
+          <Link to={href("/auth/forgot-password")} className="text-[10px] uppercase tracking-widest font-bold text-primary hover:text-primary-focus transition-colors">
             Mot de passe oublié ?
-          </button>
+          </Link>
         </div>
       </div>
 
