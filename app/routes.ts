@@ -59,6 +59,8 @@ export default [
         route("add", productsDir("add.tsx")),
         route(":slug", productsDir("[slug]/_index.tsx")),
         route(":slug/edit", productsDir("[slug]/edit.tsx")),
+        route("api/like", productsDir("api/like.ts")),
+        route("api/review", productsDir("api/review.ts")),
       ]),
   
       ...prefix("categories", [
