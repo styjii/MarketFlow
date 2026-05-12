@@ -7,7 +7,7 @@ import { ArticleDescription } from "./ArticleDescription";
 import { ArticleAttributes } from "./ArticleAttributes";
 import { ArticleGallery } from "./ArticleGallery";
 import { ArticlePurchaseFooter } from "./ArticlePurchaseFooter";
-import { ArticleReviews } from "./ArticleReviews";
+import { ArticleReviews } from "./ArticleReviews/ArticleReviews";
 import { useArticleOrder } from "./hooks/useArticleOrder";
 import { OrderModal } from "~/components/home/OrderModal";
 import type { Product } from "~/types/products";
