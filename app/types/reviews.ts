@@ -36,6 +36,8 @@ export function normalizeReview(raw: RawReview): Review {
 }
 
 /** Helper pour lire le profil d'un review en toute sécurité */
-export function getReviewProfile(review: Review): ReviewProfile | null {
+export function getReviewProfile<T extends { profiles?: ReviewProfile | null }>(
+  review: T
+): ReviewProfile | null {
   return review.profiles ?? null;
 }

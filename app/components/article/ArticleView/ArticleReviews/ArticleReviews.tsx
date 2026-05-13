@@ -5,10 +5,10 @@ import { useArticleReviews } from "../hooks/useArticleReviews";
 import { ReviewForm } from "./ReviewForm";
 import { ReviewCard } from "./ReviewCard";
 import { UserReviewDisplay } from "./UserReviewDisplay";
-import type { Review } from "~/types/review";
+import type { Review } from "~/types/reviews";
 
 interface ArticleReviewsProps {
-  reviews: Review[];
+  reviews: Omit<Review, "product_id" | "user_id">[];
   userId: string | null;
   userReview: { id: string; rating: number; comment: string | null } | null;
 }

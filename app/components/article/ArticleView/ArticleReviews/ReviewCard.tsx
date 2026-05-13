@@ -1,10 +1,9 @@
 import { Avatar } from "~/components/shared/Avatar";
 import { StarDisplay } from "./StarDisplay";
-import type { Review } from "~/types/review";
-import { getReviewProfile } from "~/types/review";
+import { getReviewProfile, type Review } from "~/types/reviews";
 
 interface ReviewCardProps {
-  review: Review;
+  review: Omit<Review, "product_id" | "user_id">;
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
