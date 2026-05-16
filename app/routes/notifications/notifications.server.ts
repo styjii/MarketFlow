@@ -1,22 +1,34 @@
 import { createClient } from "~/lib/supabase.server";
-import type { Order, OrderStatus } from "~/types/order";
+import type { Order } from "~/types/order";
+import type { NotificationItem, NotificationKind } from "~/types/notifications";
 import { data } from "react-router";
 
-export type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  status: OrderStatus;
-  orderId: string;
-  isRead: boolean;
-  /** true si cette commande appartient au vendeur connecté (dashboard link) */
-  isSeller: boolean;
-};
+export type { NotificationItem, NotificationKind };
+
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function fmtPrice(amount: number) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(amount);
+}
 
 // ─────────────────────────────────────────────────────────────
 // LOADER
 // ─────────────────────────────────────────────────────────────
+
 export async function performGetNotifications(request: Request) {
   const { supabase, headers } = createClient(request);
 
@@ -25,103 +37,188 @@ export async function performGetNotifications(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) throw new Response("Non autorisé", { status: 401, headers });
 
-  // Commandes de l'utilisateur (en tant qu'acheteur)
-  const { data: orders, error } = await supabase
+  // ── 1. Clés déjà lues ──────────────────────────────────────
+  const { data: reads } = await supabase
+    .from("notification_reads")
+    .select("notification_key")
+    .eq("user_id", user.id);
+
+  const readSet = new Set((reads ?? []).map((r) => r.notification_key));
+
+  const notifications: NotificationItem[] = [];
+
+  // ── 2. Mes commandes (acheteur) ─────────────────────────────
+  const { data: buyerOrders, error: buyerErr } = await supabase
     .from("orders")
     .select("id, status, total_amount, created_at")
     .eq("buyer_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Response(error.message, { status: 500, headers });
+  if (buyerErr) throw new Response(buyerErr.message, { status: 500, headers });
 
-  // IDs des notifications déjà lues
-  const { data: reads } = await supabase
-    .from("notification_reads")
-    .select("order_id")
-    .eq("user_id", user.id);
+  for (const order of (buyerOrders ?? []) as unknown as Order[]) {
+    const ref = `#${order.id.slice(0, 8)}`;
+    const key = `order:${order.id}`;
 
-  const readSet = new Set((reads ?? []).map((r) => r.order_id));
+    let title = "Mise à jour de commande";
+    let message = `Votre commande ${ref} a été mise à jour.`;
 
-  // Produits vendus par l'utilisateur (pour détecter ses propres produits dans les orders)
-  const { data: sellerProducts } = await supabase
-    .from("products")
-    .select("id")
-    .eq("seller_id", user.id);
+    switch (order.status) {
+      case "pending":
+        title = "Paiement en attente";
+        message = `Votre commande ${ref} attend le paiement · ${fmtPrice(order.total_amount)}.`;
+        break;
+      case "paid":
+        title = "Commande confirmée";
+        message = `Votre commande ${ref} a été payée. Vous la recevrez bientôt.`;
+        break;
+      case "shipped":
+        title = "Commande expédiée";
+        message = `Votre commande ${ref} a quitté l'entrepôt et est en cours de livraison.`;
+        break;
+      case "delivered":
+        title = "Commande livrée";
+        message = `Votre commande ${ref} a été livrée avec succès. Bonne réception !`;
+        break;
+      case "cancelled":
+        title = "Commande annulée";
+        message = `Votre commande ${ref} a été annulée. Contactez le support si nécessaire.`;
+        break;
+    }
 
-  const sellerProductIds = new Set((sellerProducts ?? []).map((p) => p.id));
-
-  // Pour chaque order, vérifier si un item appartient au vendeur connecté
-  // (simplification : on récupère order_items en masse)
-  const orderIds = (orders as unknown as Order[]).map((o) => o.id);
-  let sellerOrderIds = new Set<string>();
-
-  if (sellerProductIds.size > 0 && orderIds.length > 0) {
-    const { data: items } = await supabase
-      .from("order_items")
-      .select("order_id, product_id")
-      .in("order_id", orderIds);
-
-    sellerOrderIds = new Set(
-      (items ?? [])
-        .filter((item) => sellerProductIds.has(item.product_id))
-        .map((item) => item.order_id)
-    );
+    notifications.push({
+      key,
+      kind: "order_buyer",
+      title,
+      message,
+      created_at: fmtDate(order.created_at),
+      _ts: new Date(order.created_at).getTime(),
+      isRead: readSet.has(key),
+      destination: "/orders",
+      orderStatus: order.status,
+    });
   }
 
-  const notifications: NotificationItem[] = (orders as unknown as Order[]).map(
-    (order) => {
-      const orderRef = `#${order.id.slice(0, 8)}`;
-      const formattedDate = new Date(order.created_at).toLocaleDateString(
-        "fr-FR",
-        {
-          day: "numeric",
-          month: "long",
-          hour: "2-digit",
-          minute: "2-digit",
-        }
-      );
+  // ── 3. Mes produits (pour les notifs vendeur) ────────────────
+  const { data: myProducts } = await supabase
+    .from("products")
+    .select("id, title, slug")
+    .eq("seller_id", user.id);
 
-      let title = "Mise à jour de commande";
-      let message = "Votre commande a été mise à jour.";
-
-      switch (order.status) {
-        case "pending":
-          title = "Paiement en attente";
-          message = `Votre commande ${orderRef} attend le paiement. Montant total ${order.total_amount} €.`;
-          break;
-        case "paid":
-          title = "Commande payée";
-          message = `Votre commande ${orderRef} a été payée. Préparez-vous à la recevoir bientôt.`;
-          break;
-        case "shipped":
-          title = "Commande expédiée";
-          message = `Votre commande ${orderRef} a quitté l'entrepôt et est en cours de livraison.`;
-          break;
-        case "delivered":
-          title = "Commande livrée";
-          message = `Votre commande ${orderRef} a été livrée avec succès.`;
-          break;
-        case "cancelled":
-          title = "Commande annulée";
-          message = `Votre commande ${orderRef} a été annulée. Contactez le support si nécessaire.`;
-          break;
-        default:
-          title = "Mise à jour de commande";
-          message = `Votre commande ${orderRef} a été mise à jour.`;
-      }
-
-      return {
-        id: order.id,
-        title,
-        message,
-        created_at: formattedDate,
-        status: order.status,
-        orderId: order.id,
-        isRead: readSet.has(order.id),
-        isSeller: sellerOrderIds.has(order.id),
-      };
-    }
+  const myProductIds = (myProducts ?? []).map((p) => p.id);
+  const productMap = new Map(
+    (myProducts ?? []).map((p) => [p.id, { title: p.title as string, slug: p.slug as string }])
   );
+
+  if (myProductIds.length > 0) {
+    // ── 3a. Commandes reçues sur mes produits ──────────────────
+    const { data: soldItems } = await supabase
+      .from("order_items")
+      .select(
+        "order_id, product_id, quantity, unit_price, orders(id, created_at, status, total_amount)"
+      )
+      .in("product_id", myProductIds)
+      .order("order_id", { ascending: false });
+
+    // Dédupliquer : une commande peut contenir plusieurs de mes produits
+    const seenOrders = new Set<string>();
+    for (const item of soldItems ?? []) {
+      const order = item.orders as unknown as Order;
+      if (!order || seenOrders.has(order.id)) continue;
+      seenOrders.add(order.id);
+
+      const product = productMap.get(item.product_id);
+      const ref = `#${order.id.slice(0, 8)}`;
+      const key = `order_seller:${order.id}`;
+
+      notifications.push({
+        key,
+        kind: "order_seller",
+        title: "Nouvelle commande reçue 🛒",
+        message: `La commande ${ref} inclut "${product?.title ?? "votre produit"}" · ${fmtPrice(order.total_amount)}.`,
+        created_at: fmtDate(order.created_at),
+        _ts: new Date(order.created_at).getTime(),
+        isRead: readSet.has(key),
+        destination: `/dashboard/orders`,
+        orderStatus: order.status,
+      });
+    }
+
+    // ── 3b. Avis reçus sur mes produits ───────────────────────
+    const { data: reviews } = await supabase
+      .from("reviews")
+      .select("id, rating, comment, created_at, product_id, profiles(username)")
+      .in("product_id", myProductIds)
+      .neq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    for (const review of reviews ?? []) {
+      const product = productMap.get(review.product_id);
+      const key = `review:${review.id}`;
+
+      const rawProfiles = review.profiles as
+        | { username: string | null }
+        | { username: string | null }[]
+        | null;
+      const username =
+        (Array.isArray(rawProfiles) ? rawProfiles[0] : rawProfiles)?.username ??
+        "Un utilisateur";
+
+      const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+
+      notifications.push({
+        key,
+        kind: "review",
+        title: `Nouvel avis ${stars}`,
+        message: review.comment
+          ? `${username} a commenté "${product?.title ?? "votre produit"}" : "${review.comment.slice(0, 80)}${review.comment.length > 80 ? "…" : ""}"`
+          : `${username} a noté "${product?.title ?? "votre produit"}" ${review.rating}/5.`,
+        created_at: fmtDate(review.created_at),
+        _ts: new Date(review.created_at).getTime(),
+        isRead: readSet.has(key),
+        destination: product?.slug
+          ? `/dashboard/products/${product.slug}`
+          : `/dashboard/products`,
+      });
+    }
+
+    // ── 3c. Likes reçus sur mes produits ──────────────────────
+    const { data: likes } = await supabase
+      .from("product_likes")
+      .select("id, product_id, user_id, created_at, profiles(username)")
+      .in("product_id", myProductIds)
+      .neq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    for (const like of likes ?? []) {
+      const product = productMap.get(like.product_id);
+      const key = `like:${like.id}`;
+
+      const rawProfiles = like.profiles as
+        | { username: string | null }
+        | { username: string | null }[]
+        | null;
+      const username =
+        (Array.isArray(rawProfiles) ? rawProfiles[0] : rawProfiles)?.username ??
+        "Un utilisateur";
+
+      notifications.push({
+        key,
+        kind: "like",
+        title: "Nouveau like ❤️",
+        message: `${username} a aimé "${product?.title ?? "votre produit"}".`,
+        created_at: fmtDate(like.created_at),
+        _ts: new Date(like.created_at).getTime(),
+        isRead: readSet.has(key),
+        destination: product?.slug
+          ? `/dashboard/products/${product.slug}`
+          : `/dashboard/products`,
+      });
+    }
+  }
+
+  // ── 4. Tri global : plus récent en premier ──────────────────
+  notifications.sort((a, b) => b._ts - a._ts);
 
   return data({ notifications, userId: user.id }, { headers });
 }
@@ -129,6 +226,7 @@ export async function performGetNotifications(request: Request) {
 // ─────────────────────────────────────────────────────────────
 // ACTIONS
 // ─────────────────────────────────────────────────────────────
+
 export async function performNotificationsAction(request: Request) {
   const { supabase, headers } = createClient(request);
 
@@ -142,14 +240,14 @@ export async function performNotificationsAction(request: Request) {
 
   // ── Marquer UNE notification comme lue ──────────────────────
   if (intent === "mark_read") {
-    const orderId = formData.get("orderId") as string;
-    if (!orderId) return data({ success: false }, { headers });
+    const key = formData.get("key") as string;
+    if (!key) return data({ success: false }, { headers });
 
     await supabase
       .from("notification_reads")
       .upsert(
-        { user_id: user.id, order_id: orderId },
-        { onConflict: "user_id,order_id" }
+        { user_id: user.id, notification_key: key },
+        { onConflict: "user_id,notification_key" }
       );
 
     return data({ success: true, intent: "mark_read" }, { headers });
@@ -157,17 +255,17 @@ export async function performNotificationsAction(request: Request) {
 
   // ── Tout marquer comme lu ────────────────────────────────────
   if (intent === "mark_all_read") {
-    const rawIds = formData.get("orderIds") as string;
-    const orderIds: string[] = JSON.parse(rawIds ?? "[]");
+    const rawKeys = formData.get("keys") as string;
+    const keys: string[] = JSON.parse(rawKeys ?? "[]");
 
-    if (orderIds.length > 0) {
-      const rows = orderIds.map((order_id) => ({
+    if (keys.length > 0) {
+      const rows = keys.map((notification_key) => ({
         user_id: user.id,
-        order_id,
+        notification_key,
       }));
       await supabase
         .from("notification_reads")
-        .upsert(rows, { onConflict: "user_id,order_id" });
+        .upsert(rows, { onConflict: "user_id,notification_key" });
     }
 
     return data({ success: true, intent: "mark_all_read" }, { headers });

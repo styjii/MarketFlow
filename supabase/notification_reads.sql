@@ -1,11 +1,19 @@
--- TABLE : notification_reads
--- Stocke les notifications lues par utilisateur (clé : user_id + order_id)
+-- ============================================================
+-- Migration : notification_reads (version 2)
+-- Remplace la colonne order_id par notification_key (string)
+-- pour supporter orders, reviews et likes.
+-- ============================================================
+
+-- Si vous avez déjà créé la v1, exécutez d'abord :
+DROP TABLE IF EXISTS public.notification_reads;
+
 CREATE TABLE IF NOT EXISTS public.notification_reads (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  order_id   UUID REFERENCES public.orders(id)   ON DELETE CASCADE NOT NULL,
-  read_at    TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (user_id, order_id)
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  -- Clé composite sous forme de string : "order:<id>", "review:<id>", "like:<productId>:<authorId>"
+  notification_key  TEXT NOT NULL,
+  read_at           TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, notification_key)
 );
 
 ALTER TABLE public.notification_reads ENABLE ROW LEVEL SECURITY;
@@ -19,4 +27,5 @@ CREATE POLICY "Users can insert their own reads"
   WITH CHECK (auth.uid() = user_id);
 
 -- Index pour les lookups fréquents
-CREATE INDEX idx_notification_reads_user ON public.notification_reads(user_id);
+CREATE INDEX idx_notification_reads_user    ON public.notification_reads(user_id);
+CREATE INDEX idx_notification_reads_key     ON public.notification_reads(notification_key);

@@ -6,43 +6,61 @@ import {
   Truck,
   XCircle,
   CheckCheck,
+  ShoppingBag,
+  Star,
+  Heart,
 } from "lucide-react";
 import { useFetcher, useNavigate } from "react-router";
+import type { NotificationItem, NotificationKind } from "~/types/notifications";
 
-export type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  status: string;
-  orderId: string;
-  isRead: boolean;
-  /** true si la commande contient un produit vendu par l'utilisateur connecté */
-  isSeller: boolean;
-};
+// ─── Icône selon kind + orderStatus ──────────────────────────
+function NotifIcon({ kind, orderStatus }: { kind: NotificationKind; orderStatus?: string }) {
+  if (kind === "review") return <Star className="w-5 h-5 text-warning" />;
+  if (kind === "like")   return <Heart className="w-5 h-5 text-error" />;
+  if (kind === "order_seller") return <ShoppingBag className="w-5 h-5 text-secondary" />;
 
-// ─── Icône selon statut ───────────────────────────────────────
-function StatusIcon({ status }: { status: string }) {
-  switch (status) {
-    case "paid":
-      return <CheckCircle2 className="w-5 h-5 text-success" />;
-    case "shipped":
-      return <Truck className="w-5 h-5 text-info" />;
-    case "delivered":
-      return <Package className="w-5 h-5 text-primary" />;
-    case "cancelled":
-      return <XCircle className="w-5 h-5 text-error" />;
-    case "pending":
-      return <Clock className="w-5 h-5 text-warning" />;
-    default:
-      return <Bell className="w-5 h-5 text-base-content/70" />;
+  // order_buyer : icône selon statut
+  switch (orderStatus) {
+    case "paid":      return <CheckCircle2 className="w-5 h-5 text-success" />;
+    case "shipped":   return <Truck        className="w-5 h-5 text-info" />;
+    case "delivered": return <Package      className="w-5 h-5 text-primary" />;
+    case "cancelled": return <XCircle      className="w-5 h-5 text-error" />;
+    case "pending":   return <Clock        className="w-5 h-5 text-warning" />;
+    default:          return <Bell         className="w-5 h-5 text-base-content/50" />;
   }
+}
+
+// ─── Badge de catégorie ───────────────────────────────────────
+function KindBadge({ kind }: { kind: NotificationKind }) {
+  const map: Record<NotificationKind, { label: string; cls: string }> = {
+    order_buyer:  { label: "Ma commande",  cls: "badge-primary"   },
+    order_seller: { label: "Vente",        cls: "badge-secondary" },
+    review:       { label: "Avis",         cls: "badge-warning"   },
+    like:         { label: "Like",         cls: "badge-error"     },
+  };
+  const { label, cls } = map[kind];
+  return (
+    <span className={`badge badge-outline badge-xs font-semibold ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
+// ─── Couleur de l'icône-container selon kind ─────────────────
+function iconBg(kind: NotificationKind, read: boolean) {
+  if (read) return "bg-base-200";
+  const map: Record<NotificationKind, string> = {
+    order_buyer:  "bg-primary/10",
+    order_seller: "bg-secondary/10",
+    review:       "bg-warning/10",
+    like:         "bg-error/10",
+  };
+  return map[kind];
 }
 
 // ─── Composant principal ──────────────────────────────────────
 export const NotificationsView = ({
   notifications,
-  userId,
 }: {
   notifications: NotificationItem[];
   userId: string;
@@ -50,56 +68,45 @@ export const NotificationsView = ({
   const fetcher = useFetcher();
   const navigate = useNavigate();
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-  const unreadOrderIds = notifications
-    .filter((n) => !n.isRead)
-    .map((n) => n.orderId);
-
-  // Optimistic reads : ensemble des IDs marqués "en cours" côté client
-  const optimisticReadIds = new Set<string>();
+  // Optimistic reads
+  const optimisticKeys = new Set<string>();
   if (fetcher.formData) {
     const intent = fetcher.formData.get("intent");
     if (intent === "mark_all_read") {
-      notifications.forEach((n) => optimisticReadIds.add(n.orderId));
+      notifications.forEach((n) => optimisticKeys.add(n.key));
     }
     if (intent === "mark_read") {
-      const id = fetcher.formData.get("orderId") as string;
-      if (id) optimisticReadIds.add(id);
+      const k = fetcher.formData.get("key") as string;
+      if (k) optimisticKeys.add(k);
     }
   }
 
-  const isRead = (n: NotificationItem) =>
-    n.isRead || optimisticReadIds.has(n.orderId);
+  const isRead = (n: NotificationItem) => n.isRead || optimisticKeys.has(n.key);
 
-  // Destination au clic :
-  //   - vendeur → /dashboard/products (page produit dans le dashboard)
-  //   - acheteur → /orders
-  const getDestination = (n: NotificationItem) =>
-    n.isSeller
-      ? `/dashboard/orders`
-      : `/orders`;
+  const unreadItems = notifications.filter((n) => !isRead(n));
+  const unreadCount = unreadItems.length;
+  const unreadKeys  = unreadItems.map((n) => n.key);
 
-  const handleClick = (notification: NotificationItem) => {
-    if (!isRead(notification)) {
+  const handleClick = (n: NotificationItem) => {
+    if (!isRead(n)) {
       fetcher.submit(
-        { intent: "mark_read", orderId: notification.orderId },
+        { intent: "mark_read", key: n.key },
         { method: "post" }
       );
     }
-    navigate(getDestination(notification));
+    navigate(n.destination);
   };
 
   const handleMarkAllRead = () => {
-    if (unreadOrderIds.length === 0) return;
+    if (unreadKeys.length === 0) return;
     fetcher.submit(
-      { intent: "mark_all_read", orderIds: JSON.stringify(unreadOrderIds) },
+      { intent: "mark_all_read", keys: JSON.stringify(unreadKeys) },
       { method: "post" }
     );
   };
 
   const displayedUnread =
-    unreadCount -
-    (fetcher.formData?.get("intent") === "mark_all_read" ? unreadCount : 0);
+    fetcher.formData?.get("intent") === "mark_all_read" ? 0 : unreadCount;
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 p-4">
@@ -114,13 +121,13 @@ export const NotificationsView = ({
           )}
         </div>
 
-        {unreadOrderIds.length > 0 &&
+        {unreadKeys.length > 0 &&
           fetcher.formData?.get("intent") !== "mark_all_read" && (
             <button
               onClick={handleMarkAllRead}
               className="btn btn-ghost btn-sm gap-2 opacity-70 hover:opacity-100"
             >
-              <CheckCheck size={16} />
+              <CheckCheck size={15} />
               Tout marquer comme lu
             </button>
           )}
@@ -129,58 +136,50 @@ export const NotificationsView = ({
       {/* ── Liste ── */}
       {notifications.length > 0 ? (
         <div className="space-y-2">
-          {notifications.map((notification) => {
-            const read = isRead(notification);
+          {notifications.map((n) => {
+            const read = isRead(n);
             return (
               <button
-                key={notification.id}
+                key={n.key}
                 type="button"
-                onClick={() => handleClick(notification)}
+                onClick={() => handleClick(n)}
                 className={`
                   w-full text-left rounded-2xl border transition-all duration-200
                   hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99]
-                  ${
-                    read
-                      ? "bg-base-100 border-base-200 opacity-60"
-                      : "bg-base-100 border-primary/20 shadow-sm ring-1 ring-primary/10"
+                  ${read
+                    ? "bg-base-100 border-base-200 opacity-55"
+                    : "bg-base-100 border-primary/20 shadow-sm ring-1 ring-primary/10"
                   }
                 `}
               >
-                <div className="p-4 flex items-start gap-4">
-                  {/* Icône statut */}
-                  <div
-                    className={`shrink-0 p-2.5 rounded-xl transition-colors ${
-                      read ? "bg-base-200" : "bg-primary/10"
-                    }`}
-                  >
-                    <StatusIcon status={notification.status} />
+                <div className="p-4 flex items-start gap-3">
+                  {/* Icône */}
+                  <div className={`shrink-0 p-2.5 rounded-xl transition-colors ${iconBg(n.kind, read)}`}>
+                    <NotifIcon kind={n.kind} orderStatus={n.orderStatus} />
                   </div>
 
                   {/* Contenu */}
                   <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p
-                        className={`font-semibold text-sm leading-tight ${
-                          read ? "text-base-content/60" : "text-base-content"
-                        }`}
-                      >
-                        {notification.title}
-                      </p>
-
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`font-semibold text-sm leading-tight ${read ? "text-base-content/55" : "text-base-content"}`}>
+                          {n.title}
+                        </p>
+                        <KindBadge kind={n.kind} />
+                      </div>
                       {/* Point bleu non-lu */}
                       {!read && (
-                        <span className="shrink-0 mt-1 w-2 h-2 rounded-full bg-primary" />
+                        <span className="shrink-0 w-2 h-2 rounded-full bg-primary mt-0.5" />
                       )}
                     </div>
 
                     <p className="text-xs text-base-content/50 leading-relaxed line-clamp-2">
-                      {notification.message}
+                      {n.message}
                     </p>
 
-                    <div className="flex items-center justify-between pt-1 text-[11px] text-base-content/35">
-                      <span>Commande #{notification.orderId.slice(0, 8)}</span>
-                      <span>{notification.created_at}</span>
-                    </div>
+                    <p className="text-[11px] text-base-content/30 pt-0.5">
+                      {n.created_at}
+                    </p>
                   </div>
                 </div>
               </button>
@@ -193,8 +192,8 @@ export const NotificationsView = ({
             <Bell className="w-10 h-10 opacity-20" />
           </div>
           <p className="text-lg font-semibold opacity-60">Aucune notification</p>
-          <p className="text-sm opacity-40 text-center max-w-xs">
-            Vos alertes de commande et mises à jour seront affichées ici.
+          <p className="text-sm opacity-40 text-center max-w-xs mt-1">
+            Les activités sur vos commandes et produits apparaîtront ici.
           </p>
         </div>
       )}
